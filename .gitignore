@@ -26,9 +26,9 @@ ffmpeg-*-full_build.7z
 ZnDownloader_log.txt
 *.log
 
-# ---- Stray auto-named screenshots (put README images in docs/ instead) ----
-Képernyőkép*.png
-Screenshot*.png
+# ---- Stray auto-named screenshots in the project ROOT (README images go in docs/) ----
+/Képernyőkép*.png
+/Screenshot*.png
 
 # ---- OS / editor junk ----
 Thumbs.db
