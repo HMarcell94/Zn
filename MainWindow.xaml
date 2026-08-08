@@ -1,0 +1,723 @@
+﻿<Window x:Class="ZnDownloader.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:local="clr-namespace:ZnDownloader"
+        mc:Ignorable="d"
+        Title="Zn Tools" Height="760" Width="920" MinHeight="640" MinWidth="720"
+        FontFamily="Segoe UI" Icon="pack://application:,,,/icon.ico"
+        WindowStyle="None" ResizeMode="CanResize" Background="#0A0510"
+        WindowStartupLocation="CenterScreen"
+        StateChanged="Window_StateChanged">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+
+        <!-- ===================== COLOR TOKENS ===================== -->
+        <SolidColorBrush x:Key="TextPrimary" Color="#F6F1FF"/>
+        <SolidColorBrush x:Key="TextMuted"   Color="#C7B7DE"/>
+        <SolidColorBrush x:Key="TextHint"    Color="#8C7CA8"/>
+        <SolidColorBrush x:Key="InputBg"     Color="#26FFFFFF"/>
+        <SolidColorBrush x:Key="InputBorder" Color="#3AFFFFFF"/>
+        <SolidColorBrush x:Key="AccentPink"  Color="#FF3D9E"/>
+        <SolidColorBrush x:Key="AccentCyan"  Color="#34D9F0"/>
+
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF3D9E" Offset="0"/>
+            <GradientStop Color="#B14EFF" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="AccentGradientHover" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF5CB4" Offset="0"/>
+            <GradientStop Color="#C46BFF" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="CardBg" StartPoint="0,0" EndPoint="0.6,1">
+            <GradientStop Color="#9E1E1234" Offset="0"/>
+            <GradientStop Color="#B8120A22" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="CardBorder" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#66FF3D9E" Offset="0"/>
+            <GradientStop Color="#5534D9F0" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ===================== COMBOBOX TOGGLE TEMPLATE ===================== -->
+        <ControlTemplate x:Key="ComboToggleTemplate" TargetType="ToggleButton">
+            <Border x:Name="tb" Background="{StaticResource InputBg}" BorderBrush="{StaticResource InputBorder}" BorderThickness="1" CornerRadius="8">
+                <TextBlock x:Name="chev" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="tb" Property="BorderBrush" Value="#77FFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="tb" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- ===================== SECTION / FIELD LABELS ===================== -->
+        <Style x:Key="StepLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="2,14,0,6"/>
+        </Style>
+        <Style x:Key="TabTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style x:Key="TabSubtitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextHint}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Margin" Value="0,3,0,4"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- ===================== TABITEM ===================== -->
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Border" CornerRadius="10" Margin="3,0" Padding="16,9" Background="Transparent">
+                            <ContentPresenter x:Name="Content" ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#1FFFFFFF"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentGradient}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="Border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF3D9E" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== TEXTBOX (with placeholder via Tag) ===================== -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="CaretBrush" Value="{StaticResource AccentPink}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" Focusable="false" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden"/>
+                                <TextBlock x:Name="Hint" Text="{TemplateBinding Tag}" Foreground="{StaticResource TextHint}" FontSize="13.5"
+                                           Margin="13,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Hint" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                                <Setter TargetName="border" Property="Background" Value="#33FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#77FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== COMBOBOX ===================== -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Template="{StaticResource ComboToggleTemplate}" Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press"/>
+                            <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              Margin="13,0,34,0" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                        Background="#F51C1236" BorderBrush="#66FFFFFF" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="4" Opacity="0.5"/>
+                                    </Border.Effect>
+                                    <ScrollViewer><ItemsPresenter/></ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="6" Margin="4,2" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#40FF3D9E"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#59FF3D9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== WINDOW CONTROL BUTTONS ===================== -->
+        <Style x:Key="WindowControlButton" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#33FFFFFF"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource WindowControlButton}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ===================== PILL SEGMENTED RADIOBUTTON ===================== -->
+        <Style x:Key="PillRadio" TargetType="RadioButton">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="19">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3AFFFFFF"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentGradient}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF3D9E" BlurRadius="14" ShadowDepth="0" Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== PRIMARY ACCENT BUTTON ===================== -->
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FF3D9E" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentGradientHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.99" ScaleY="0.97" CenterX="0" CenterY="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== SECONDARY / ICON BUTTONS ===================== -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3AFFFFFF"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#77FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#15FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Square icon button (paste / open folder) -->
+        <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+
+        <!-- ===================== CONVERTER FORMAT BUTTON ===================== -->
+        <Style x:Key="FormatButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="60"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="fb" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="fb" Property="Background" Value="#3AFFFFFF"/>
+                                <Setter TargetName="fb" Property="BorderBrush" Value="#77FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- ===================== ROOT ===================== -->
+    <Grid x:Name="RootLayout" Background="#0A0510">
+        <!-- Synthwave background: bright and clearly visible, softly blurred -->
+        <Image Source="pack://application:,,,/hatterkep.png" Stretch="UniformToFill" Opacity="0.92">
+            <Image.Effect>
+                <BlurEffect Radius="14"/>
+            </Image.Effect>
+        </Image>
+        <!-- Light gradient wash: only enough to keep the title bar and log readable -->
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#2B000000" Offset="0"/>
+                    <GradientStop Color="#08000000" Offset="0.45"/>
+                    <GradientStop Color="#66000000" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Glass card -->
+        <Border Margin="26" Background="{StaticResource CardBg}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="18">
+            <Border.Effect>
+                <DropShadowEffect Color="#FF3D9E" BlurRadius="55" ShadowDepth="0" Opacity="0.28"/>
+            </Border.Effect>
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="CardTransform" Y="14"/>
+            </Border.RenderTransform>
+            <Border.Triggers>
+                <EventTrigger RoutedEvent="Border.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.45"/>
+                            <DoubleAnimation Storyboard.TargetName="CardTransform" Storyboard.TargetProperty="Y" From="14" To="0" Duration="0:0:0.45">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Border.Triggers>
+
+            <Grid Margin="22,14,22,18">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Title bar -->
+                <Grid Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource AccentGradient}" VerticalAlignment="Center">
+                            <TextBlock Text="Zn" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Zn Tools" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}" Margin="12,0,0,0"/>
+                        <TextBlock Text="Letöltő &amp; média eszközök" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource TextHint}" Margin="12,2,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button x:Name="MinimizeButton" Content="&#xE921;" Style="{StaticResource WindowControlButton}" Click="MinimizeButton_Click" ToolTip="Kis méret"/>
+                        <Button x:Name="MaximizeButton" Content="&#xE922;" Style="{StaticResource WindowControlButton}" Click="MaximizeButton_Click" ToolTip="Teljes méret"/>
+                        <Button x:Name="CloseButton" Content="&#xE8BB;" Style="{StaticResource CloseButton}" Click="CloseButton_Click" ToolTip="Bezárás"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Tabs -->
+                <TabControl Grid.Row="1" x:Name="MainTabControl" Background="Transparent" BorderThickness="0" Margin="0,14,0,0" Padding="0">
+
+                    <!-- ============ TAB 1: YOUTUBE ============ -->
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE714;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="YouTube" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </TabItem.Header>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                            <StackPanel Margin="4,6,10,6">
+                                <TextBlock Text="YouTube letöltés" Style="{StaticResource TabTitle}"/>
+                                <TextBlock Text="Tölts le zenét (audió) vagy videót egy YouTube link alapján." Style="{StaticResource TabSubtitle}"/>
+
+                                <TextBlock Text="MIT SZERETNÉL LETÖLTENI?" Style="{StaticResource StepLabel}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="YtAudioModeRadio" Content="🎵  Zene (audió)" Style="{StaticResource PillRadio}" IsChecked="True" Margin="0,0,10,0" Checked="YtMode_Checked"/>
+                                    <RadioButton x:Name="YtVideoModeRadio" Content="🎬  Videó" Style="{StaticResource PillRadio}" Checked="YtMode_Checked"/>
+                                </StackPanel>
+
+                                <TextBlock Text="YOUTUBE LINK" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="YtUrlTextBox" Tag="https://www.youtube.com/watch?v=..."/>
+                                    <Button x:Name="YtPasteButton" Grid.Column="1" Content="&#xE77F;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="YtPasteButton_Click" ToolTip="Beillesztés vágólapról"/>
+                                </Grid>
+
+                                <!-- Audio options -->
+                                <StackPanel x:Name="YtAudioPanel">
+                                    <TextBlock Text="AUDIÓ FORMÁTUM" Style="{StaticResource StepLabel}"/>
+                                    <ComboBox x:Name="YtAudioFormatCombo" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="220">
+                                        <ComboBoxItem Content="mp3"/>
+                                        <ComboBoxItem Content="m4a"/>
+                                        <ComboBoxItem Content="wav"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Video options -->
+                                <StackPanel x:Name="YtVideoPanel" Visibility="Collapsed">
+                                    <TextBlock Text="VIDEÓ MINŐSÉG" Style="{StaticResource StepLabel}"/>
+                                    <ComboBox x:Name="YtVideoQualityCombo" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="260">
+                                        <ComboBoxItem Content="Legjobb elérhető"/>
+                                        <ComboBoxItem Content="1080p"/>
+                                        <ComboBoxItem Content="720p"/>
+                                        <ComboBoxItem Content="480p"/>
+                                        <ComboBoxItem Content="360p"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="YtPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                    <Button x:Name="YtBrowseButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="YtBrowseButton_Click"/>
+                                    <Button x:Name="YtOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="YtOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                </Grid>
+
+                                <Button x:Name="YtDownloadButton" Content="Zene letöltése" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="YtDownloadButton_Click"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <!-- ============ TAB 2: PINTEREST ============ -->
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE840;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Pinterest" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </TabItem.Header>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                            <StackPanel Margin="4,6,10,6">
+                                <TextBlock Text="Pinterest videó letöltés" Style="{StaticResource TabTitle}"/>
+                                <TextBlock Text="Illessz be egy Pinterest Pin linket a videó letöltéséhez." Style="{StaticResource TabSubtitle}"/>
+
+                                <TextBlock Text="PINTEREST LINK" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="PinUrlTextBox" Tag="https://www.pinterest.com/pin/..."/>
+                                    <Button x:Name="PinPasteButton" Grid.Column="1" Content="&#xE77F;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="PinPasteButton_Click" ToolTip="Beillesztés vágólapról"/>
+                                </Grid>
+
+                                <TextBlock Text="VIDEÓ FORMÁTUM" Style="{StaticResource StepLabel}"/>
+                                <ComboBox x:Name="PinFormatCombo" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="260">
+                                    <ComboBoxItem Content="mp4 (ajánlott)"/>
+                                    <ComboBoxItem Content="eredeti minőség"/>
+                                </ComboBox>
+
+                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="PinPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                    <Button x:Name="PinBrowseButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="PinBrowseButton_Click"/>
+                                    <Button x:Name="PinOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="PinOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                </Grid>
+
+                                <Button x:Name="PinDownloadButton" Content="Videó letöltése" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="PinDownloadButton_Click"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <!-- ============ TAB 3: VIDEO UPSCALER ============ -->
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8A3;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Felskálázás" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </TabItem.Header>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                            <StackPanel Margin="4,6,10,6">
+                                <TextBlock Text="Videó felskálázás" Style="{StaticResource TabTitle}"/>
+                                <TextBlock Text="Növeld a videó felbontását helyben (FFmpeg) vagy felhő AI-val (Fal.ai)." Style="{StaticResource TabSubtitle}"/>
+
+                                <TextBlock Text="1 · BEMENETI VIDEÓ  (húzd ide, vagy tallózz)" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="UpscalerInputFileTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}" Tag="Húzz ide egy videót…"
+                                             AllowDrop="True" PreviewDragOver="File_PreviewDragOver" Drop="UpscalerInput_Drop"/>
+                                    <Button x:Name="UpscalerInputFileButton" Grid.Column="1" Content="Videó kiválasztása" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="UpscalerInputFileButton_Click"/>
+                                </Grid>
+
+                                <TextBlock Text="2 · MÓDSZER" Style="{StaticResource StepLabel}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="LocalUpscalerRadioButton" Content="Helyi FFmpeg (ingyenes, offline)" Style="{StaticResource PillRadio}" IsChecked="True" Margin="0,0,10,0" Checked="UpscalerMethod_Checked"/>
+                                    <RadioButton x:Name="CloudUpscalerRadioButton" Content="Fal.ai felhő AI (ingyenes próba)" Style="{StaticResource PillRadio}" Checked="UpscalerMethod_Checked"/>
+                                </StackPanel>
+
+                                <!-- Local options -->
+                                <StackPanel x:Name="LocalUpscalerOptionsPanel">
+                                    <TextBlock Text="NAGYÍTÁS" Style="{StaticResource StepLabel}"/>
+                                    <ComboBox x:Name="LocalScaleComboBox" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="220">
+                                        <ComboBoxItem Content="2x"/>
+                                        <ComboBoxItem Content="3x"/>
+                                        <ComboBoxItem Content="4x"/>
+                                    </ComboBox>
+                                    <TextBlock Text="ALGORITMUS" Style="{StaticResource StepLabel}"/>
+                                    <ComboBox x:Name="LocalAlgorithmComboBox" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="360">
+                                        <ComboBoxItem Content="Lanczos (Valósághű / High Quality)"/>
+                                        <ComboBoxItem Content="xBR (Rajzfilm / Anime / Pixel Art)"/>
+                                        <ComboBoxItem Content="Bicubic (Standard)"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Cloud options -->
+                                <StackPanel x:Name="CloudUpscalerOptionsPanel" Visibility="Collapsed">
+                                    <TextBlock Text="FAL.AI API KULCS" Style="{StaticResource StepLabel}"/>
+                                    <TextBox x:Name="CloudApiKeyTextBox" Tag="Illeszd be a Fal.ai kulcsod…"/>
+                                    <TextBlock Text="Nincs kulcsod? Regisztrálj ingyen (kártya nélkül) a fal.ai oldalon." FontSize="11.5" Foreground="{StaticResource TextHint}" Margin="2,6,0,0"/>
+                                    <TextBlock Text="MODELL" Style="{StaticResource StepLabel}"/>
+                                    <ComboBox x:Name="CloudModelComboBox" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="420">
+                                        <ComboBoxItem Content="clarityai/crystal-video-upscaler (HQ Video)"/>
+                                        <ComboBoxItem Content="bria/video/increase-resolution (Standard)"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <TextBlock Text="3 · MENTÉS IDE" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="UpscalerOutputPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                    <Button x:Name="UpscalerOutputPathButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="UpscalerOutputPathButton_Click"/>
+                                    <Button x:Name="UpscalerOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="UpscalerOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                </Grid>
+
+                                <Button x:Name="UpscaleButton" Content="Videó felskálázása" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="UpscaleButton_Click"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <!-- ============ TAB 4: FILE CONVERTER ============ -->
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Konvertálás" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </TabItem.Header>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                            <StackPanel Margin="4,6,10,6">
+                                <TextBlock Text="Fájl konvertálás" Style="{StaticResource TabTitle}"/>
+                                <TextBlock Text="Alakíts át hang-, videó- és képfájlokat egy másik formátumba." Style="{StaticResource TabSubtitle}"/>
+
+                                <TextBlock Text="1 · BEMENETI FÁJL  (húzd ide, vagy tallózz)" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="InputFileTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}" Tag="Húzz ide egy fájlt…"
+                                             AllowDrop="True" PreviewDragOver="File_PreviewDragOver" Drop="ConverterInput_Drop"/>
+                                    <Button x:Name="InputFileButton" Grid.Column="1" Content="Fájl kiválasztása" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="InputFileButton_Click"/>
+                                </Grid>
+
+                                <TextBlock Text="2 · CÉL FORMÁTUM" Style="{StaticResource StepLabel}"/>
+                                <Border BorderBrush="{StaticResource InputBorder}" BorderThickness="1" CornerRadius="10" Padding="6" Background="#18000000">
+                                    <WrapPanel x:Name="FormatButtonsWrapPanel">
+                                        <Button Content=".mp3" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".wav" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".aac" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".flac" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".ogg" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".mp4" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".mkv" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".mov" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".avi" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".webm" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".png" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".jpg" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".gif" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".bmp" Style="{StaticResource FormatButtonStyle}"/>
+                                        <Button Content=".ico" Style="{StaticResource FormatButtonStyle}"/>
+                                    </WrapPanel>
+                                </Border>
+
+                                <TextBlock Text="3 · MENTÉS IDE" Style="{StaticResource StepLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="OutputPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                    <Button x:Name="OutputPathButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="OutputPathButton_Click"/>
+                                    <Button x:Name="OutputOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="OutputOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                </Grid>
+
+                                <Button x:Name="ConvertButton" Content="Fájl konvertálása" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="ConvertButton_Click"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+
+                <!-- Status log -->
+                <Grid Grid.Row="2" Margin="0,14,0,0">
+                    <Border CornerRadius="10" Background="#59000000" BorderBrush="#22FFFFFF" BorderThickness="1" Padding="12,10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="120">
+                            <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                                       Text="Üdv! Válassz egy fület fent a kezdéshez." Foreground="{StaticResource TextMuted}"/>
+                        </ScrollViewer>
+                    </Border>
+                    <Button x:Name="ClearLogButton" Content="&#xE74D;" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6"
+                            Width="26" Height="26" Style="{StaticResource WindowControlButton}" Click="ClearLogButton_Click" ToolTip="Napló törlése"/>
+                </Grid>
+
+                <!-- Progress -->
+                <ProgressBar Grid.Row="3" x:Name="GlobalProgressBar" Height="6" Margin="0,12,0,0" IsIndeterminate="True" Visibility="Collapsed"
+                             Minimum="0" Maximum="100" Background="#33000000" BorderThickness="0" Foreground="{StaticResource AccentPink}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

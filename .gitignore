@@ -1,0 +1,37 @@
+# ---- .NET / Visual Studio build output ----
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# ---- Debug / Release folders (extra safety) ----
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+
+# ---- Bundled third-party tools: DO NOT COMMIT ----
+# These are large binaries with their own licenses. Download them separately
+# (see README) and drop them next to the built .exe.
+yt-dlp.exe
+ffmpeg.exe
+ffprobe.exe
+ffmpeg-*-full_build/
+ffmpeg-*-full_build.7z
+
+# ---- Runtime logs ----
+ZnDownloader_log.txt
+*.log
+
+# ---- Stray auto-named screenshots (put README images in docs/ instead) ----
+Képernyőkép*.png
+Screenshot*.png
+
+# ---- OS / editor junk ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
