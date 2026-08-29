@@ -37,7 +37,7 @@ A modern **WPF (.NET 8)** desktop media toolkit for Windows — download music a
 
 - Windows 10 / 11
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- **`yt-dlp.exe`**, **`ffmpeg.exe`** and **`ffprobe.exe`** — these third-party tools are **not** included in the repository. Download them and place them next to the built executable (the `bin/Debug/net8.0-windows/` output folder):
+- **`yt-dlp.exe`**, **`ffmpeg.exe`** and **`ffprobe.exe`** — these third-party CLI tools are **not** committed to the repository (they are large binaries with their own licenses). The app looks for them next to the built executable (the `bin/Debug/net8.0-windows/` output folder). The easiest way to get them is the bundled `fetch-tools.ps1` script (see below); to install them by hand instead:
   - yt-dlp: <https://github.com/yt-dlp/yt-dlp/releases>
   - FFmpeg (full build): <https://www.gyan.dev/ffmpeg/builds/>
 
@@ -46,8 +46,21 @@ A modern **WPF (.NET 8)** desktop media toolkit for Windows — download music a
 ```bash
 git clone https://github.com/HMarcell94/Zn.git
 cd Zn
+```
+
+Fetch the third-party tools into the build output folder (one-time, needs only PowerShell):
+
+```powershell
+./fetch-tools.ps1
+```
+
+Then build and run:
+
+```bash
 dotnet run --project ZnDownloader.csproj
 ```
+
+> `fetch-tools.ps1` downloads `yt-dlp.exe`, `ffmpeg.exe` and `ffprobe.exe` into `bin/Debug/net8.0-windows/`. It skips anything already present — pass `-Force` to refresh, or `-OutputDir bin/Release/net8.0-windows` for a Release build.
 
 ### Cloud upscaling (optional)
 
@@ -60,6 +73,7 @@ ZnDownloader.csproj   # .NET 8 WPF project
 App.xaml(.cs)         # App entry point + global crash logging
 MainWindow.xaml       # UI: styles, 4 tabs, synthwave glass layout
 MainWindow.xaml.cs    # Logic: downloading, conversion, upscaling
+fetch-tools.ps1       # Downloads yt-dlp / ffmpeg / ffprobe into the build output
 hatterkep.png         # Background image (embedded resource)
 icon.ico              # App icon
 ```
