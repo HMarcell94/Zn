@@ -1,6 +1,6 @@
 # Zn Tools
 
-A modern **WPF (.NET 8)** desktop media toolkit for Windows — download music and video from **YouTube**, download video from **Pinterest**, convert audio/video/image files, and **upscale videos** either locally (FFmpeg) or with cloud AI (Fal.ai). All wrapped in a custom, frameless "synthwave glass" UI.
+A modern **WPF (.NET 8)** desktop media toolkit for Windows — convert between 15 audio, video and image formats, **upscale video** either locally (FFmpeg) or with cloud AI (Fal.ai), and fetch media from a URL. All wrapped in a custom, frameless "synthwave glass" UI.
 
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/UI-WPF-2C68C4)
@@ -16,10 +16,10 @@ A modern **WPF (.NET 8)** desktop media toolkit for Windows — download music a
 
 | Tab | What it does |
 | --- | --- |
-| ▶ **YouTube** | Download **music** (`mp3` / `m4a` / `wav`) or **video** (Best / 1080p / 720p / 480p / 360p, merged to `mp4`) from any YouTube link. |
-| 📌 **Pinterest** | Download video from a Pinterest Pin link (`mp4` or original quality). |
 | ✨ **Video Upscaler** | Increase video resolution **locally** with FFmpeg (2×–4×, Lanczos / xBR / Bicubic) or via **Fal.ai** cloud AI models. |
 | ⇄ **File Converter** | Convert between 15 audio, video, and image formats (`mp3`, `wav`, `flac`, `mp4`, `mkv`, `webm`, `png`, `jpg`, `ico`, …). |
+| ▶ **YouTube** | Download **music** (`mp3` / `m4a` / `wav`) or **video** (Best / 1080p / 720p / 480p / 360p, merged to `mp4`) from any YouTube link. |
+| 📌 **Pinterest** | Download video from a Pinterest Pin link (`mp4` or original quality). |
 
 **Usability niceties:** paste-from-clipboard buttons, one-click "open output folder", drag-and-drop file input, a live download progress bar, a custom frameless window (drag, snap, resize), and a real-time status log.
 
