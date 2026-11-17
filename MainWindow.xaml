@@ -6,11 +6,12 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:ZnDownloader"
         mc:Ignorable="d"
-        Title="Zn Tools" Height="760" Width="920" MinHeight="640" MinWidth="720"
-        FontFamily="Segoe UI" Icon="pack://application:,,,/icon.ico"
-        WindowStyle="None" ResizeMode="CanResize" Background="#0A0510"
-        WindowStartupLocation="CenterScreen"
-        StateChanged="Window_StateChanged">
+        Title="Zn Tools" Height="760" Width="1160" MinHeight="600" MinWidth="760"
+        FontFamily="Segoe UI Variable Text, Segoe UI" Icon="pack://application:,,,/icon.ico"
+        WindowStyle="None" ResizeMode="CanResize" Background="#0B0616"
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True"
+        StateChanged="Window_StateChanged" SizeChanged="Window_SizeChanged"
+        SourceInitialized="Window_SourceInitialized" Loaded="Window_Loaded" Closing="Window_Closing">
 
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
@@ -18,14 +19,23 @@
 
     <Window.Resources>
 
-        <!-- ===================== COLOR TOKENS ===================== -->
-        <SolidColorBrush x:Key="TextPrimary" Color="#F6F1FF"/>
-        <SolidColorBrush x:Key="TextMuted"   Color="#C7B7DE"/>
-        <SolidColorBrush x:Key="TextHint"    Color="#8C7CA8"/>
-        <SolidColorBrush x:Key="InputBg"     Color="#26FFFFFF"/>
-        <SolidColorBrush x:Key="InputBorder" Color="#3AFFFFFF"/>
+        <!-- ===================== TOKENS ===================== -->
+        <SolidColorBrush x:Key="TextPrimary" Color="#F7F2FF"/>
+        <SolidColorBrush x:Key="TextMuted"   Color="#C9BBE0"/>
+        <SolidColorBrush x:Key="TextHint"    Color="#8F80AB"/>
         <SolidColorBrush x:Key="AccentPink"  Color="#FF3D9E"/>
+        <SolidColorBrush x:Key="AccentViolet" Color="#B14EFF"/>
         <SolidColorBrush x:Key="AccentCyan"  Color="#34D9F0"/>
+        <SolidColorBrush x:Key="InputBg"     Color="#12FFFFFF"/>
+        <SolidColorBrush x:Key="InputBorder" Color="#29FFFFFF"/>
+        <SolidColorBrush x:Key="Hairline"    Color="#17FFFFFF"/>
+        <SolidColorBrush x:Key="SurfaceBg"   Color="#C2140C24"/>
+        <SolidColorBrush x:Key="SidebarBg"   Color="#B30B0617"/>
+        <SolidColorBrush x:Key="ConsoleBg"   Color="#C70A0613"/>
+
+        <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+        <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+        <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
 
         <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#FF3D9E" Offset="0"/>
@@ -35,111 +45,232 @@
             <GradientStop Color="#FF5CB4" Offset="0"/>
             <GradientStop Color="#C46BFF" Offset="1"/>
         </LinearGradientBrush>
-        <LinearGradientBrush x:Key="CardBg" StartPoint="0,0" EndPoint="0.6,1">
-            <GradientStop Color="#9E1E1234" Offset="0"/>
-            <GradientStop Color="#B8120A22" Offset="1"/>
+        <LinearGradientBrush x:Key="AccentGradientH" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#FF3D9E" Offset="0"/>
+            <GradientStop Color="#B14EFF" Offset="0.6"/>
+            <GradientStop Color="#34D9F0" Offset="1"/>
         </LinearGradientBrush>
-        <LinearGradientBrush x:Key="CardBorder" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#66FF3D9E" Offset="0"/>
-            <GradientStop Color="#5534D9F0" Offset="1"/>
+        <LinearGradientBrush x:Key="CardBorder" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#3DFFFFFF" Offset="0"/>
+            <GradientStop Color="#0DFFFFFF" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="NavSelectedBg" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#33FF3D9E" Offset="0"/>
+            <GradientStop Color="#0AB14EFF" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- ===================== COMBOBOX TOGGLE TEMPLATE ===================== -->
-        <ControlTemplate x:Key="ComboToggleTemplate" TargetType="ToggleButton">
-            <Border x:Name="tb" Background="{StaticResource InputBg}" BorderBrush="{StaticResource InputBorder}" BorderThickness="1" CornerRadius="8">
-                <TextBlock x:Name="chev" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10"
-                           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
-            </Border>
+        <!-- Page side margins; Window_SizeChanged swaps this for a tighter one on narrow windows. -->
+        <Thickness x:Key="PageMargin">40,0,40,28</Thickness>
+
+        <!-- Slow drift of the background light orbs (started from code, paused when minimised). -->
+        <Storyboard x:Key="BackdropDrift" Timeline.DesiredFrameRate="30">
+            <DoubleAnimation Storyboard.TargetName="Orb1Move" Storyboard.TargetProperty="X" From="0" To="110" Duration="0:0:21" AutoReverse="True" RepeatBehavior="Forever">
+                <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="Orb1Move" Storyboard.TargetProperty="Y" From="0" To="70" Duration="0:0:17" AutoReverse="True" RepeatBehavior="Forever">
+                <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="Orb2Move" Storyboard.TargetProperty="X" From="0" To="-120" Duration="0:0:25" AutoReverse="True" RepeatBehavior="Forever">
+                <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="Orb2Move" Storyboard.TargetProperty="Y" From="0" To="90" Duration="0:0:19" AutoReverse="True" RepeatBehavior="Forever">
+                <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="Orb3Move" Storyboard.TargetProperty="X" From="0" To="140" Duration="0:0:23" AutoReverse="True" RepeatBehavior="Forever">
+                <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="Orb3Move" Storyboard.TargetProperty="Y" From="0" To="-60" Duration="0:0:16" AutoReverse="True" RepeatBehavior="Forever">
+                <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- ===================== TYPOGRAPHY ===================== -->
+        <Style x:Key="Eyebrow" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource AccentPink}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+            <Setter Property="FontSize" Value="30"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+        <Style x:Key="PageSubtitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextHint}"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Margin" Value="0,6,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="CardTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+            <Setter Property="FontSize" Value="15.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="CardSubtitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextHint}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="2,18,0,8"/>
+        </Style>
+        <Style x:Key="HintText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextHint}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Margin" Value="2,8,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="IconGlyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Collapses in the narrow (icon-only) sidebar -->
+        <Style x:Key="HideWhenCompact" TargetType="FrameworkElement">
+            <Style.Triggers>
+                <Trigger Property="local:Ui.IsCompact" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ShowWhenCompact" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <Trigger Property="local:Ui.IsCompact" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ===================== SURFACES ===================== -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBg}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="Padding" Value="24,22"/>
+        </Style>
+        <Style x:Key="IconTile" TargetType="Border">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Background" Value="#24FF3D9E"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="PageScroll" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+        <Style x:Key="PageStack" TargetType="StackPanel">
+            <Setter Property="Margin" Value="{DynamicResource PageMargin}"/>
+            <Setter Property="MaxWidth" Value="1100"/>
+        </Style>
+
+        <!-- ===================== SCROLLBAR (slim) ===================== -->
+        <ControlTemplate x:Key="SlimThumb" TargetType="Thumb">
+            <Border x:Name="t" CornerRadius="3" Background="#3DFFFFFF"/>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="tb" Property="BorderBrush" Value="#77FFFFFF"/>
+                    <Setter TargetName="t" Property="Background" Value="#73FFFFFF"/>
                 </Trigger>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter TargetName="tb" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                <Trigger Property="IsDragging" Value="True">
+                    <Setter TargetName="t" Property="Background" Value="{StaticResource AccentPink}"/>
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
-
-        <!-- ===================== SECTION / FIELD LABELS ===================== -->
-        <Style x:Key="StepLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="2,14,0,6"/>
-        </Style>
-        <Style x:Key="TabTitle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-        <Style x:Key="TabSubtitle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextHint}"/>
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Margin" Value="0,3,0,4"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
-        </Style>
-
-        <!-- ===================== TABITEM ===================== -->
-        <Style TargetType="TabItem">
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-            <Setter Property="FontSize" Value="13.5"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Border" CornerRadius="10" Margin="3,0" Padding="16,9" Background="Transparent">
-                            <ContentPresenter x:Name="Content" ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="3,4">
+                            <Track.Thumb>
+                                <Thumb Template="{StaticResource SlimThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto"/>
+                    <Setter Property="MinWidth" Value="0"/>
+                    <Setter Property="Height" Value="10"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ScrollBar">
+                                <Track x:Name="PART_Track" IsDirectionReversed="False" Margin="4,3">
+                                    <Track.Thumb>
+                                        <Thumb Template="{StaticResource SlimThumb}"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ===================== TOOLTIP ===================== -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="#F2180F29" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="8" Padding="10,6">
+                            <ContentPresenter/>
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#1FFFFFFF"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentGradient}"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter TargetName="Border" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#FF3D9E" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- ===================== TEXTBOX (with placeholder via Tag) ===================== -->
+        <!-- ===================== TEXTBOX (placeholder via Tag) ===================== -->
         <Style TargetType="TextBox">
             <Setter Property="Background" Value="{StaticResource InputBg}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="Padding" Value="13,0"/>
+            <Setter Property="MinHeight" Value="44"/>
             <Setter Property="FontSize" Value="13.5"/>
             <Setter Property="CaretBrush" Value="{StaticResource AccentPink}"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource AccentPink}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="11">
                             <Grid>
-                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" Focusable="false" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden"/>
+                                <!-- No Margin here: the text view already applies the TextBox's Padding itself. -->
+                                <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="False"
+                                              VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden"/>
                                 <TextBlock x:Name="Hint" Text="{TemplateBinding Tag}" Foreground="{StaticResource TextHint}" FontSize="13.5"
-                                           Margin="13,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                           Margin="15,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="Text" Value="">
                                 <Setter TargetName="Hint" Property="Visibility" Value="Visible"/>
                             </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
-                                <Setter TargetName="border" Property="Background" Value="#33FFFFFF"/>
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#77FFFFFF"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#59FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                                <Setter TargetName="border" Property="Background" Value="#1AFFFFFF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -147,11 +278,60 @@
             </Setter>
         </Style>
 
+        <!-- Read-only, selectable log: select / copy with mouse, Ctrl+A, Ctrl+C or right-click. -->
+        <Style x:Key="LogTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="IsReadOnlyCaretVisible" Value="False"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource AccentPink}"/>
+            <Setter Property="SelectionOpacity" Value="0.45"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False" HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Same, without its own ScrollViewer, so the mouse wheel still scrolls the surrounding list. -->
+        <Style x:Key="SelectableText" TargetType="TextBox" BasedOn="{StaticResource LogTextBox}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Decorator x:Name="PART_ContentHost"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ===================== COMBOBOX ===================== -->
+        <ControlTemplate x:Key="ComboToggleTemplate" TargetType="ToggleButton">
+            <Border x:Name="tb" Background="{StaticResource InputBg}" BorderBrush="{StaticResource InputBorder}" BorderThickness="1" CornerRadius="11">
+                <TextBlock x:Name="chev" Text="&#xE70D;" FontFamily="{StaticResource IconFont}" FontSize="10"
+                           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="tb" Property="BorderBrush" Value="#59FFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="tb" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                    <Setter TargetName="chev" Property="Foreground" Value="{StaticResource AccentPink}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
         <Style TargetType="ComboBox">
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="44"/>
             <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
@@ -160,12 +340,12 @@
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press"/>
                             <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              Margin="13,0,34,0" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                              Margin="15,0,36,0" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                                 <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                        Background="#F51C1236" BorderBrush="#66FFFFFF" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0">
+                                        Background="#F7180F2A" BorderBrush="#40FFFFFF" BorderThickness="1" CornerRadius="12" Margin="0,6,0,12" Padding="0,4">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="4" Opacity="0.5"/>
+                                        <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="6" Opacity="0.55"/>
                                     </Border.Effect>
                                     <ScrollViewer><ItemsPresenter/></ScrollViewer>
                                 </Border>
@@ -179,18 +359,19 @@
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="FontSize" Value="13.5"/>
             <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="b" Background="Transparent" CornerRadius="6" Margin="4,2" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="8" Margin="5,1" Padding="{TemplateBinding Padding}">
                             <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#40FF3D9E"/>
+                                <Setter TargetName="b" Property="Background" Value="#33FF3D9E"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#59FF3D9E"/>
+                                <Setter TargetName="b" Property="Background" Value="#4DFF3D9E"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -200,22 +381,21 @@
 
         <!-- ===================== WINDOW CONTROL BUTTONS ===================== -->
         <Style x:Key="WindowControlButton" TargetType="Button">
-            <Setter Property="Width" Value="34"/>
-            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="36"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="10.5"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="7">
+                        <Border x:Name="b" Background="{TemplateBinding Background}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#33FFFFFF"/>
+                                <Setter TargetName="b" Property="Background" Value="#1FFFFFFF"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -224,43 +404,16 @@
             </Setter>
         </Style>
         <Style x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource WindowControlButton}">
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- ===================== PILL SEGMENTED RADIOBUTTON ===================== -->
-        <Style x:Key="PillRadio" TargetType="RadioButton">
-            <Setter Property="Height" Value="38"/>
-            <Setter Property="Background" Value="{StaticResource InputBg}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="18,0"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="19">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#3AFFFFFF"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentGradient}"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentPink}"/>
+                                <Setter TargetName="b" Property="Background" Value="#E8264F"/>
                                 <Setter Property="Foreground" Value="White"/>
-                                <Setter TargetName="border" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#FF3D9E" BlurRadius="14" ShadowDepth="0" Opacity="0.5"/>
-                                    </Setter.Value>
-                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -268,37 +421,76 @@
             </Setter>
         </Style>
 
-        <!-- ===================== PRIMARY ACCENT BUTTON ===================== -->
-        <Style x:Key="AccentButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Height" Value="48"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+        <!-- Small transparent icon button (console, history rows) -->
+        <Style x:Key="GhostIconButton" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#FF3D9E" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
-                            </Border.Effect>
+                        <Border x:Name="b" Background="Transparent" CornerRadius="9">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentGradientHover}"/>
+                                <Setter TargetName="b" Property="Background" Value="#1FFFFFFF"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="RenderTransform">
+                                <Setter TargetName="b" Property="Background" Value="#33FF3D9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== PRIMARY BUTTON (icon via local:Ui.Icon) ===================== -->
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="root" RenderTransformOrigin="0.5,0.5">
+                            <Border x:Name="glow" CornerRadius="14" Background="{StaticResource AccentGradient}" Opacity="0.5" Margin="10,10,10,-4">
+                                <Border.Effect>
+                                    <BlurEffect Radius="20"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="bg" CornerRadius="14" Background="{StaticResource AccentGradient}">
+                                <Border CornerRadius="14" BorderThickness="1" BorderBrush="#40FFFFFF"/>
+                            </Border>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock x:Name="icon" Text="{Binding (local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource IconFont}" FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="local:Ui.Icon" Value="{x:Null}">
+                                <Setter TargetName="icon" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="{StaticResource AccentGradientHover}"/>
+                                <Setter TargetName="glow" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="root" Property="RenderTransform">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="0.99" ScaleY="0.97" CenterX="0" CenterY="0"/>
+                                        <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="root" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -313,60 +505,242 @@
             <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="16,0"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="42"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="11">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}">
+                                <TextBlock x:Name="icon" Text="{Binding (local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="local:Ui.Icon" Value="{x:Null}">
+                                <Setter TargetName="icon" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#3AFFFFFF"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#77FFFFFF"/>
+                                <Setter TargetName="border" Property="Background" Value="#24FFFFFF"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#59FFFFFF"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#15FFFFFF"/>
+                                <Setter TargetName="border" Property="Background" Value="#0DFFFFFF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Square icon button (paste / open folder) -->
         <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="Width" Value="42"/>
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="44"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Normal"/>
         </Style>
 
-        <!-- ===================== CONVERTER FORMAT BUTTON ===================== -->
+        <!-- ===================== CONVERTER FORMAT CHIP ===================== -->
         <Style x:Key="FormatButtonStyle" TargetType="Button">
-            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
             <Setter Property="Height" Value="34"/>
-            <Setter Property="MinWidth" Value="60"/>
-            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinWidth" Value="66"/>
+            <Setter Property="Padding" Value="14,0"/>
             <Setter Property="Background" Value="{StaticResource InputBg}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="fb" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="fb" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="17" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="fb" Property="Background" Value="#3AFFFFFF"/>
-                                <Setter TargetName="fb" Property="BorderBrush" Value="#77FFFFFF"/>
+                                <Setter TargetName="fb" Property="BorderBrush" Value="#73FFFFFF"/>
+                            </Trigger>
+                            <!-- Not compatible with the chosen input -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="fb" Property="Opacity" Value="0.28"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== DROP ZONE (click to browse, or drop a file) ===================== -->
+        <Style x:Key="DropZone" TargetType="Button">
+            <Setter Property="MinHeight" Value="164"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="AllowDrop" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Rectangle x:Name="frame" RadiusX="14" RadiusY="14" Fill="#08FFFFFF" Stroke="#47FFFFFF" StrokeThickness="1.3" StrokeDashArray="5 4"/>
+                            <ContentPresenter Margin="20,18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="frame" Property="Stroke" Value="{StaticResource AccentPink}"/>
+                                <Setter TargetName="frame" Property="Fill" Value="#12FF3D9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== SEGMENTED CONTROL ===================== -->
+        <Style x:Key="SegmentHost" TargetType="Border">
+            <Setter Property="Background" Value="#14FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1FFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="13"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+        <Style x:Key="SegmentItem" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bg" CornerRadius="10" Background="Transparent">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
+                                <TextBlock x:Name="icon" Text="{Binding (local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="local:Ui.Icon" Value="{x:Null}">
+                                <Setter TargetName="icon" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                <Setter TargetName="bg" Property="Background" Value="#0FFFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="{StaticResource AccentGradient}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="bg" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF3D9E" BlurRadius="16" ShadowDepth="0" Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== SIDEBAR NAV ITEM ===================== -->
+        <Style x:Key="NavItem" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="Nav"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Border x:Name="bg" CornerRadius="12" Background="Transparent"/>
+                            <Border x:Name="bar" Width="3" Height="20" CornerRadius="2" HorizontalAlignment="Left" Background="{StaticResource AccentGradient}" Opacity="0"/>
+                            <StackPanel x:Name="content" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,12,0">
+                                <TextBlock x:Name="glyph" Text="{Binding (local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource IconFont}" FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center"/>
+                                <ContentPresenter x:Name="label" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#12FFFFFF"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="{StaticResource NavSelectedBg}"/>
+                                <Setter TargetName="bar" Property="Opacity" Value="1"/>
+                                <Setter TargetName="glyph" Property="Foreground" Value="{StaticResource AccentPink}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="local:Ui.IsCompact" Value="True">
+                                <Setter TargetName="label" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="content" Property="HorizontalAlignment" Value="Center"/>
+                                <Setter TargetName="content" Property="Margin" Value="0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <!-- Tooltips only make sense when the labels are hidden -->
+                <Trigger Property="local:Ui.IsCompact" Value="False">
+                    <Setter Property="ToolTipService.IsEnabled" Value="False"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ===================== TABS: headers hidden, the sidebar drives selection ===================== -->
+        <Style TargetType="TabItem">
+            <Setter Property="Visibility" Value="Collapsed"/>
+        </Style>
+
+        <!-- ===================== PROGRESS (thin neon line) ===================== -->
+        <Style x:Key="NeonProgress" TargetType="ProgressBar">
+            <Setter Property="Height" Value="3"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid ClipToBounds="True">
+                            <Border x:Name="PART_Track" Background="#1AFFFFFF" CornerRadius="2"/>
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{StaticResource AccentGradientH}" CornerRadius="2"/>
+                            <Rectangle x:Name="Sweep" Visibility="Collapsed" RadiusX="2" RadiusY="2">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <LinearGradientBrush.RelativeTransform>
+                                            <TranslateTransform X="-1"/>
+                                        </LinearGradientBrush.RelativeTransform>
+                                        <GradientStop Color="#00FF3D9E" Offset="0"/>
+                                        <GradientStop Color="#FFFF3D9E" Offset="0.4"/>
+                                        <GradientStop Color="#FFB14EFF" Offset="0.6"/>
+                                        <GradientStop Color="#00B14EFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsIndeterminate" Value="True">
+                                <Setter TargetName="PART_Indicator" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Sweep" Property="Visibility" Value="Visible"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard x:Name="SweepRun">
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetName="Sweep"
+                                                             Storyboard.TargetProperty="(Shape.Fill).(Brush.RelativeTransform).(TranslateTransform.X)"
+                                                             From="-1" To="1" Duration="0:0:1.5"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="SweepRun"/>
+                                </Trigger.ExitActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -377,347 +751,807 @@
     </Window.Resources>
 
     <!-- ===================== ROOT ===================== -->
-    <Grid x:Name="RootLayout" Background="#0A0510">
-        <!-- Synthwave background: bright and clearly visible, softly blurred -->
-        <Image Source="pack://application:,,,/hatterkep.png" Stretch="UniformToFill" Opacity="0.92">
-            <Image.Effect>
-                <BlurEffect Radius="14"/>
-            </Image.Effect>
-        </Image>
-        <!-- Light gradient wash: only enough to keep the title bar and log readable -->
-        <Rectangle>
-            <Rectangle.Fill>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#2B000000" Offset="0"/>
-                    <GradientStop Color="#08000000" Offset="0.45"/>
-                    <GradientStop Color="#66000000" Offset="1"/>
-                </LinearGradientBrush>
-            </Rectangle.Fill>
-        </Rectangle>
+    <Grid x:Name="RootLayout">
 
-        <!-- Glass card -->
-        <Border Margin="26" Background="{StaticResource CardBg}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="18">
-            <Border.Effect>
-                <DropShadowEffect Color="#FF3D9E" BlurRadius="55" ShadowDepth="0" Opacity="0.28"/>
-            </Border.Effect>
-            <Border.RenderTransform>
-                <TranslateTransform x:Name="CardTransform" Y="14"/>
-            </Border.RenderTransform>
-            <Border.Triggers>
-                <EventTrigger RoutedEvent="Border.Loaded">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.45"/>
-                            <DoubleAnimation Storyboard.TargetName="CardTransform" Storyboard.TargetProperty="Y" From="14" To="0" Duration="0:0:0.45">
-                                <DoubleAnimation.EasingFunction>
-                                    <CubicEase EasingMode="EaseOut"/>
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-            </Border.Triggers>
+        <!-- ============ ABSTRACT BACKDROP ============ -->
+        <Grid IsHitTestVisible="False" ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="0.55*"/>
+            </Grid.RowDefinitions>
 
-            <Grid Margin="22,14,22,18">
+            <Rectangle Grid.RowSpan="2">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#0B0616" Offset="0"/>
+                        <GradientStop Color="#130A25" Offset="0.64"/>
+                        <GradientStop Color="#1A0B2B" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- Light orbs -->
+            <Ellipse Grid.RowSpan="2" Width="880" Height="880" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-300,-380,0,0">
+                <Ellipse.RenderTransform><TranslateTransform x:Name="Orb1Move"/></Ellipse.RenderTransform>
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#70FF3D9E" Offset="0"/>
+                        <GradientStop Color="#24FF3D9E" Offset="0.45"/>
+                        <GradientStop Color="#00FF3D9E" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Ellipse Grid.RowSpan="2" Width="1000" Height="1000" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,-220,-420,0">
+                <Ellipse.RenderTransform><TranslateTransform x:Name="Orb2Move"/></Ellipse.RenderTransform>
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#66A24BFF" Offset="0"/>
+                        <GradientStop Color="#1FA24BFF" Offset="0.5"/>
+                        <GradientStop Color="#00A24BFF" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Ellipse Grid.RowSpan="2" Width="640" Height="640" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="160,0,0,-320">
+                <Ellipse.RenderTransform><TranslateTransform x:Name="Orb3Move"/></Ellipse.RenderTransform>
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#4D34D9F0" Offset="0"/>
+                        <GradientStop Color="#1434D9F0" Offset="0.5"/>
+                        <GradientStop Color="#0034D9F0" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+
+            <!-- Abstract synthwave sun, sliced and sinking into the horizon -->
+            <Grid Grid.Row="0" ClipToBounds="True">
+                <Ellipse Width="620" Height="620" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,30,-340">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#55FF3D9E" Offset="0"/>
+                            <GradientStop Color="#00FF3D9E" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+                <Ellipse Width="320" Height="320" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,180,-100" Opacity="0.5">
+                    <Ellipse.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FFC46B" Offset="0"/>
+                            <GradientStop Color="#FF3D9E" Offset="0.55"/>
+                            <GradientStop Color="#B14EFF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.OpacityMask>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FF000000" Offset="0"/>
+                            <GradientStop Color="#FF000000" Offset="0.48"/>
+                            <GradientStop Color="#00000000" Offset="0.48"/>
+                            <GradientStop Color="#00000000" Offset="0.51"/>
+                            <GradientStop Color="#FF000000" Offset="0.51"/>
+                            <GradientStop Color="#FF000000" Offset="0.57"/>
+                            <GradientStop Color="#00000000" Offset="0.57"/>
+                            <GradientStop Color="#00000000" Offset="0.61"/>
+                            <GradientStop Color="#FF000000" Offset="0.61"/>
+                            <GradientStop Color="#FF000000" Offset="0.66"/>
+                            <GradientStop Color="#00000000" Offset="0.66"/>
+                            <GradientStop Color="#00000000" Offset="0.71"/>
+                            <GradientStop Color="#FF000000" Offset="0.71"/>
+                            <GradientStop Color="#FF000000" Offset="0.75"/>
+                            <GradientStop Color="#00000000" Offset="0.75"/>
+                            <GradientStop Color="#00000000" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.OpacityMask>
+                </Ellipse>
+            </Grid>
+
+            <!-- Perspective grid floor -->
+            <Viewbox Grid.Row="1" Stretch="Fill" Opacity="0.5">
+                <Viewbox.OpacityMask>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00000000" Offset="0"/>
+                        <GradientStop Color="#FF000000" Offset="0.55"/>
+                        <GradientStop Color="#AA000000" Offset="1"/>
+                    </LinearGradientBrush>
+                </Viewbox.OpacityMask>
+                <Canvas Width="1000" Height="300" ClipToBounds="True">
+                    <Path Stroke="#FF3D9E" StrokeThickness="1"
+                          Data="M500,0 L-1320,300 M500,0 L-1190,300 M500,0 L-1060,300 M500,0 L-930,300 M500,0 L-800,300 M500,0 L-670,300 M500,0 L-540,300 M500,0 L-410,300 M500,0 L-280,300 M500,0 L-150,300 M500,0 L-20,300 M500,0 L110,300 M500,0 L240,300 M500,0 L370,300 M500,0 L500,300 M500,0 L630,300 M500,0 L760,300 M500,0 L890,300 M500,0 L1020,300 M500,0 L1150,300 M500,0 L1280,300 M500,0 L1410,300 M500,0 L1540,300 M500,0 L1670,300 M500,0 L1800,300 M500,0 L1930,300 M500,0 L2060,300 M500,0 L2190,300 M500,0 L2320,300"/>
+                    <Path Stroke="#B14EFF" StrokeThickness="1"
+                          Data="M0,6 L1000,6 M0,18 L1000,18 M0,36 L1000,36 M0,60 L1000,60 M0,90 L1000,90 M0,126 L1000,126 M0,168 L1000,168 M0,216 L1000,216 M0,270 L1000,270"/>
+                </Canvas>
+            </Viewbox>
+            <!-- Horizon glow line -->
+            <Rectangle Grid.Row="1" Height="1" VerticalAlignment="Top" Opacity="0.7">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#00FF3D9E" Offset="0"/>
+                        <GradientStop Color="#FFFF3D9E" Offset="0.7"/>
+                        <GradientStop Color="#00FF3D9E" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- Vignette keeps the edges calm and text readable -->
+            <Rectangle Grid.RowSpan="2">
+                <Rectangle.Fill>
+                    <RadialGradientBrush Center="0.55,0.42" GradientOrigin="0.55,0.42" RadiusX="0.85" RadiusY="0.9">
+                        <GradientStop Color="#00000000" Offset="0.5"/>
+                        <GradientStop Color="#99050210" Offset="1"/>
+                    </RadialGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+        </Grid>
+
+        <!-- ============ APP SHELL ============ -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== Sidebar (collapses to an icon rail on narrow windows) ===== -->
+            <Border x:Name="Sidebar" Width="236" Background="{StaticResource SidebarBg}" BorderBrush="{StaticResource Hairline}" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Brand (also a drag handle) -->
+                    <Grid Height="88" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="19,0,0,0">
+                            <Grid Width="38" Height="38">
+                                <Border CornerRadius="12" Background="{StaticResource AccentGradient}" Opacity="0.7" Margin="2,4,2,-2">
+                                    <Border.Effect><BlurEffect Radius="14"/></Border.Effect>
+                                </Border>
+                                <Border CornerRadius="12" Background="{StaticResource AccentGradient}">
+                                    <TextBlock Text="Zn" Foreground="White" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="15"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                            <StackPanel Margin="13,0,0,0" VerticalAlignment="Center" Style="{StaticResource HideWhenCompact}">
+                                <TextBlock Text="Zn Tools" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                <TextBlock Text="Média eszköztár" FontSize="11.5" Foreground="{StaticResource TextHint}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Grid.Row="1" Text="ESZKÖZÖK" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextHint}" Margin="28,4,0,8"
+                               Style="{StaticResource HideWhenCompact}"/>
+
+                    <StackPanel x:Name="NavPanel" Grid.Row="2" Margin="12,0">
+                        <RadioButton Style="{StaticResource NavItem}" Tag="0" local:Ui.Icon="&#xE714;" Content="YouTube" ToolTip="YouTube" IsChecked="True" Checked="Nav_Checked"/>
+                        <RadioButton Style="{StaticResource NavItem}" Tag="1" local:Ui.Icon="&#xE840;" Content="Pinterest" ToolTip="Pinterest" Checked="Nav_Checked"/>
+                        <RadioButton Style="{StaticResource NavItem}" Tag="2" local:Ui.Icon="&#xE8A3;" Content="Felskálázás" ToolTip="Felskálázás" Checked="Nav_Checked"/>
+                        <RadioButton Style="{StaticResource NavItem}" Tag="3" local:Ui.Icon="&#xE895;" Content="Konvertálás" ToolTip="Konvertálás" Checked="Nav_Checked"/>
+
+                        <TextBlock Text="KÖNYVTÁR" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextHint}" Margin="16,20,0,8"
+                                   Style="{StaticResource HideWhenCompact}"/>
+                        <Border Height="1" Background="{StaticResource Hairline}" Margin="10,14" Style="{StaticResource ShowWhenCompact}"/>
+
+                        <RadioButton Style="{StaticResource NavItem}" Tag="4" local:Ui.Icon="&#xE81C;" Content="Előzmények" ToolTip="Előzmények" Checked="Nav_Checked"/>
+                    </StackPanel>
+
+                    <!-- Tool status -->
+                    <Border x:Name="ToolsStatusCard" Grid.Row="4" Margin="12,0,12,16" CornerRadius="12" Background="#0FFFFFFF" Padding="14,11">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Grid Width="10" Height="10" VerticalAlignment="Center">
+                                <Ellipse x:Name="ToolsStatusGlow" Width="10" Height="10" Fill="{StaticResource AccentCyan}" Opacity="0.5">
+                                    <Ellipse.Effect><BlurEffect Radius="6"/></Ellipse.Effect>
+                                </Ellipse>
+                                <Ellipse x:Name="ToolsStatusDot" Width="7" Height="7" Fill="{StaticResource AccentCyan}"/>
+                            </Grid>
+                            <TextBlock x:Name="ToolsStatusText" Text="Eszközök ellenőrzése…" FontSize="11.5" Foreground="{StaticResource TextHint}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160"
+                                       Style="{StaticResource HideWhenCompact}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ===== Content column ===== -->
+            <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Title bar -->
-                <Grid Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource AccentGradient}" VerticalAlignment="Center">
-                            <TextBlock Text="Zn" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Zn Tools" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}" Margin="12,0,0,0"/>
-                        <TextBlock Text="Letöltő &amp; média eszközök" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource TextHint}" Margin="12,2,0,0"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <!-- Top bar: drag area + window controls -->
+                <Grid Height="44" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
                         <Button x:Name="MinimizeButton" Content="&#xE921;" Style="{StaticResource WindowControlButton}" Click="MinimizeButton_Click" ToolTip="Kis méret"/>
                         <Button x:Name="MaximizeButton" Content="&#xE922;" Style="{StaticResource WindowControlButton}" Click="MaximizeButton_Click" ToolTip="Teljes méret"/>
                         <Button x:Name="CloseButton" Content="&#xE8BB;" Style="{StaticResource CloseButton}" Click="CloseButton_Click" ToolTip="Bezárás"/>
                     </StackPanel>
                 </Grid>
 
-                <!-- Tabs -->
-                <TabControl Grid.Row="1" x:Name="MainTabControl" Background="Transparent" BorderThickness="0" Margin="0,14,0,0" Padding="0">
+                <!-- Pages -->
+                <TabControl x:Name="MainTabControl" Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0"
+                            SelectionChanged="MainTabControl_SelectionChanged">
+                    <TabControl.Template>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TabPanel IsItemsHost="True"/>
+                                <ContentPresenter x:Name="PART_SelectedContentHost" Grid.Row="1" ContentSource="SelectedContent"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </TabControl.Template>
 
-                    <!-- ============ TAB 1: YOUTUBE ============ -->
+                    <!-- ============ PAGE 1: YOUTUBE ============ -->
                     <TabItem>
-                        <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE714;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="YouTube" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </TabItem.Header>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
-                            <StackPanel Margin="4,6,10,6">
-                                <TextBlock Text="YouTube letöltés" Style="{StaticResource TabTitle}"/>
-                                <TextBlock Text="Tölts le zenét (audió) vagy videót egy YouTube link alapján." Style="{StaticResource TabSubtitle}"/>
+                        <ScrollViewer Style="{StaticResource PageScroll}">
+                            <StackPanel Style="{StaticResource PageStack}">
+                                <TextBlock Text="LETÖLTÉS" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock Text="YouTube" Style="{StaticResource PageTitle}"/>
+                                <TextBlock Text="Zene vagy videó letöltése egy YouTube link alapján." Style="{StaticResource PageSubtitle}"/>
 
-                                <TextBlock Text="MIT SZERETNÉL LETÖLTENI?" Style="{StaticResource StepLabel}"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="YtAudioModeRadio" Content="🎵  Zene (audió)" Style="{StaticResource PillRadio}" IsChecked="True" Margin="0,0,10,0" Checked="YtMode_Checked"/>
-                                    <RadioButton x:Name="YtVideoModeRadio" Content="🎬  Videó" Style="{StaticResource PillRadio}" Checked="YtMode_Checked"/>
-                                </StackPanel>
+                                <local:AdaptiveColumnsPanel BreakWidth="760" Spacing="18" Margin="0,26,0,0">
+                                    <!-- Source -->
+                                    <Border Style="{StaticResource Card}" local:AdaptiveColumnsPanel.Weight="1.35">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <Border Style="{StaticResource IconTile}">
+                                                    <TextBlock Text="&#xE71B;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentPink}"/>
+                                                </Border>
+                                                <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Forrás" Style="{StaticResource CardTitle}"/>
+                                                    <TextBlock Text="Mit és honnan töltsön le az app" Style="{StaticResource CardSubtitle}"/>
+                                                </StackPanel>
+                                            </DockPanel>
 
-                                <TextBlock Text="YOUTUBE LINK" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="YtUrlTextBox" Tag="https://www.youtube.com/watch?v=..."/>
-                                    <Button x:Name="YtPasteButton" Grid.Column="1" Content="&#xE77F;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="YtPasteButton_Click" ToolTip="Beillesztés vágólapról"/>
-                                </Grid>
+                                            <TextBlock Text="MIT SZERETNÉL LETÖLTENI?" Style="{StaticResource FieldLabel}"/>
+                                            <Border Style="{StaticResource SegmentHost}">
+                                                <UniformGrid Rows="1">
+                                                    <RadioButton x:Name="YtAudioModeRadio" GroupName="YtMode" Style="{StaticResource SegmentItem}" local:Ui.Icon="&#xE8D6;"
+                                                                 Content="Zene (audió)" IsChecked="True" Checked="YtMode_Checked"/>
+                                                    <RadioButton x:Name="YtVideoModeRadio" GroupName="YtMode" Style="{StaticResource SegmentItem}" local:Ui.Icon="&#xE714;"
+                                                                 Content="Videó" Checked="YtMode_Checked"/>
+                                                </UniformGrid>
+                                            </Border>
 
-                                <!-- Audio options -->
-                                <StackPanel x:Name="YtAudioPanel">
-                                    <TextBlock Text="AUDIÓ FORMÁTUM" Style="{StaticResource StepLabel}"/>
-                                    <ComboBox x:Name="YtAudioFormatCombo" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="220">
-                                        <ComboBoxItem Content="mp3"/>
-                                        <ComboBoxItem Content="m4a"/>
-                                        <ComboBoxItem Content="wav"/>
-                                    </ComboBox>
-                                </StackPanel>
+                                            <TextBlock Text="YOUTUBE LINK" Style="{StaticResource FieldLabel}"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="YtUrlTextBox" Tag="https://www.youtube.com/watch?v=..."/>
+                                                <Button x:Name="YtPasteButton" Grid.Column="1" Content="&#xE77F;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                        Click="YtPasteButton_Click" ToolTip="Beillesztés a vágólapról"/>
+                                            </Grid>
+                                            <TextBlock Text="Hanghoz az app sztereó sávot választ, így a hosszú WAV-ok is kezelhető méretűek maradnak." Style="{StaticResource HintText}"/>
+                                        </StackPanel>
+                                    </Border>
 
-                                <!-- Video options -->
-                                <StackPanel x:Name="YtVideoPanel" Visibility="Collapsed">
-                                    <TextBlock Text="VIDEÓ MINŐSÉG" Style="{StaticResource StepLabel}"/>
-                                    <ComboBox x:Name="YtVideoQualityCombo" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="260">
-                                        <ComboBoxItem Content="Legjobb elérhető"/>
-                                        <ComboBoxItem Content="1080p"/>
-                                        <ComboBoxItem Content="720p"/>
-                                        <ComboBoxItem Content="480p"/>
-                                        <ComboBoxItem Content="360p"/>
-                                    </ComboBox>
-                                </StackPanel>
+                                    <!-- Output -->
+                                    <Border Style="{StaticResource Card}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <DockPanel>
+                                                <Border Style="{StaticResource IconTile}" Background="#2434D9F0">
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentCyan}"/>
+                                                </Border>
+                                                <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Kimenet" Style="{StaticResource CardTitle}"/>
+                                                    <TextBlock Text="Formátum és mentési hely" Style="{StaticResource CardSubtitle}"/>
+                                                </StackPanel>
+                                            </DockPanel>
 
-                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="YtPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
-                                    <Button x:Name="YtBrowseButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="YtBrowseButton_Click"/>
-                                    <Button x:Name="YtOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="YtOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
-                                </Grid>
+                                            <StackPanel Grid.Row="1">
+                                                <StackPanel x:Name="YtAudioPanel">
+                                                    <TextBlock Text="AUDIÓ FORMÁTUM" Style="{StaticResource FieldLabel}"/>
+                                                    <ComboBox x:Name="YtAudioFormatCombo" SelectedIndex="0">
+                                                        <ComboBoxItem Content="mp3"/>
+                                                        <ComboBoxItem Content="m4a"/>
+                                                        <ComboBoxItem Content="wav"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                                <StackPanel x:Name="YtVideoPanel" Visibility="Collapsed">
+                                                    <TextBlock Text="VIDEÓ MINŐSÉG" Style="{StaticResource FieldLabel}"/>
+                                                    <ComboBox x:Name="YtVideoQualityCombo" SelectedIndex="0">
+                                                        <ComboBoxItem Content="Legjobb elérhető"/>
+                                                        <ComboBoxItem Content="1080p"/>
+                                                        <ComboBoxItem Content="720p"/>
+                                                        <ComboBoxItem Content="480p"/>
+                                                        <ComboBoxItem Content="360p"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </StackPanel>
 
-                                <Button x:Name="YtDownloadButton" Content="Zene letöltése" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="YtDownloadButton_Click"/>
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource FieldLabel}"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="YtPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                                    <Button x:Name="YtBrowseButton" Grid.Column="1" Content="&#xE8B7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="YtBrowseButton_Click" ToolTip="Másik mappa választása…"/>
+                                                    <Button x:Name="YtOpenFolderButton" Grid.Column="2" Content="&#xE8A7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="YtOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <Button x:Name="YtDownloadButton" Grid.Row="4" Content="Zene letöltése" local:Ui.Icon="&#xE896;"
+                                                    Style="{StaticResource AccentButtonStyle}" Margin="0,26,0,0" Click="YtDownloadButton_Click"/>
+                                        </Grid>
+                                    </Border>
+                                </local:AdaptiveColumnsPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- ============ TAB 2: PINTEREST ============ -->
+                    <!-- ============ PAGE 2: PINTEREST ============ -->
                     <TabItem>
-                        <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE840;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Pinterest" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </TabItem.Header>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
-                            <StackPanel Margin="4,6,10,6">
-                                <TextBlock Text="Pinterest videó letöltés" Style="{StaticResource TabTitle}"/>
-                                <TextBlock Text="Illessz be egy Pinterest Pin linket a videó letöltéséhez." Style="{StaticResource TabSubtitle}"/>
+                        <ScrollViewer Style="{StaticResource PageScroll}">
+                            <StackPanel Style="{StaticResource PageStack}">
+                                <TextBlock Text="LETÖLTÉS" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock Text="Pinterest" Style="{StaticResource PageTitle}"/>
+                                <TextBlock Text="Videó letöltése egy Pinterest Pin linkjéből." Style="{StaticResource PageSubtitle}"/>
 
-                                <TextBlock Text="PINTEREST LINK" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="PinUrlTextBox" Tag="https://www.pinterest.com/pin/..."/>
-                                    <Button x:Name="PinPasteButton" Grid.Column="1" Content="&#xE77F;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="PinPasteButton_Click" ToolTip="Beillesztés vágólapról"/>
-                                </Grid>
+                                <local:AdaptiveColumnsPanel BreakWidth="760" Spacing="18" Margin="0,26,0,0">
+                                    <Border Style="{StaticResource Card}" local:AdaptiveColumnsPanel.Weight="1.35">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <Border Style="{StaticResource IconTile}">
+                                                    <TextBlock Text="&#xE71B;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentPink}"/>
+                                                </Border>
+                                                <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Forrás" Style="{StaticResource CardTitle}"/>
+                                                    <TextBlock Text="A Pin linkje, amin a videó van" Style="{StaticResource CardSubtitle}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <TextBlock Text="PINTEREST LINK" Style="{StaticResource FieldLabel}"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="PinUrlTextBox" Tag="https://www.pinterest.com/pin/..."/>
+                                                <Button x:Name="PinPasteButton" Grid.Column="1" Content="&#xE77F;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                        Click="PinPasteButton_Click" ToolTip="Beillesztés a vágólapról"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
 
-                                <TextBlock Text="VIDEÓ FORMÁTUM" Style="{StaticResource StepLabel}"/>
-                                <ComboBox x:Name="PinFormatCombo" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="260">
-                                    <ComboBoxItem Content="mp4 (ajánlott)"/>
-                                    <ComboBoxItem Content="eredeti minőség"/>
-                                </ComboBox>
-
-                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="PinPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
-                                    <Button x:Name="PinBrowseButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="PinBrowseButton_Click"/>
-                                    <Button x:Name="PinOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="PinOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
-                                </Grid>
-
-                                <Button x:Name="PinDownloadButton" Content="Videó letöltése" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="PinDownloadButton_Click"/>
+                                    <Border Style="{StaticResource Card}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <DockPanel>
+                                                <Border Style="{StaticResource IconTile}" Background="#2434D9F0">
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentCyan}"/>
+                                                </Border>
+                                                <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Kimenet" Style="{StaticResource CardTitle}"/>
+                                                    <TextBlock Text="Formátum és mentési hely" Style="{StaticResource CardSubtitle}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <StackPanel Grid.Row="1">
+                                                <TextBlock Text="VIDEÓ FORMÁTUM" Style="{StaticResource FieldLabel}"/>
+                                                <ComboBox x:Name="PinFormatCombo" SelectedIndex="0">
+                                                    <ComboBoxItem Content="mp4 (ajánlott)"/>
+                                                    <ComboBoxItem Content="eredeti minőség"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource FieldLabel}"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="PinPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                                    <Button x:Name="PinBrowseButton" Grid.Column="1" Content="&#xE8B7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="PinBrowseButton_Click" ToolTip="Másik mappa választása…"/>
+                                                    <Button x:Name="PinOpenFolderButton" Grid.Column="2" Content="&#xE8A7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="PinOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                                </Grid>
+                                            </StackPanel>
+                                            <Button x:Name="PinDownloadButton" Grid.Row="4" Content="Videó letöltése" local:Ui.Icon="&#xE896;"
+                                                    Style="{StaticResource AccentButtonStyle}" Margin="0,26,0,0" Click="PinDownloadButton_Click"/>
+                                        </Grid>
+                                    </Border>
+                                </local:AdaptiveColumnsPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- ============ TAB 3: VIDEO UPSCALER ============ -->
+                    <!-- ============ PAGE 3: UPSCALER ============ -->
                     <TabItem>
-                        <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE8A3;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Felskálázás" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </TabItem.Header>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
-                            <StackPanel Margin="4,6,10,6">
-                                <TextBlock Text="Videó felskálázás" Style="{StaticResource TabTitle}"/>
-                                <TextBlock Text="Növeld a videó felbontását helyben (FFmpeg) vagy felhő AI-val (Fal.ai)." Style="{StaticResource TabSubtitle}"/>
+                        <ScrollViewer Style="{StaticResource PageScroll}">
+                            <StackPanel Style="{StaticResource PageStack}">
+                                <TextBlock Text="VIDEÓ" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock Text="Felskálázás" Style="{StaticResource PageTitle}"/>
+                                <TextBlock Text="Növeld a videó felbontását helyben (FFmpeg) vagy felhő AI-val (Fal.ai)." Style="{StaticResource PageSubtitle}"/>
 
-                                <TextBlock Text="1 · BEMENETI VIDEÓ  (húzd ide, vagy tallózz)" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="UpscalerInputFileTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}" Tag="Húzz ide egy videót…"
-                                             AllowDrop="True" PreviewDragOver="File_PreviewDragOver" Drop="UpscalerInput_Drop"/>
-                                    <Button x:Name="UpscalerInputFileButton" Grid.Column="1" Content="Videó kiválasztása" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="UpscalerInputFileButton_Click"/>
-                                </Grid>
+                                <local:AdaptiveColumnsPanel BreakWidth="760" Spacing="18" Margin="0,26,0,0">
+                                    <StackPanel local:AdaptiveColumnsPanel.Weight="1.35">
+                                        <!-- Input -->
+                                        <Border Style="{StaticResource Card}">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,18">
+                                                    <Border Style="{StaticResource IconTile}">
+                                                        <TextBlock Text="&#xE714;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentPink}"/>
+                                                    </Border>
+                                                    <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="Bemeneti videó" Style="{StaticResource CardTitle}"/>
+                                                        <TextBlock Text="mp4, mkv, mov, avi vagy webm" Style="{StaticResource CardSubtitle}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <Button x:Name="UpscalerInputFileButton" Style="{StaticResource DropZone}" Click="UpscalerInputFileButton_Click"
+                                                        PreviewDragOver="File_PreviewDragOver" PreviewDrop="UpscalerInput_Drop">
+                                                    <StackPanel>
+                                                        <Border Width="50" Height="50" CornerRadius="25" Background="#24FF3D9E" HorizontalAlignment="Center">
+                                                            <TextBlock Text="&#xE898;" Style="{StaticResource IconGlyph}" FontSize="20" Foreground="{StaticResource AccentPink}"/>
+                                                        </Border>
+                                                        <TextBlock Text="Húzd ide a videót" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                                                   HorizontalAlignment="Center" Margin="0,12,0,2"/>
+                                                        <TextBlock Text="vagy kattints a tallózáshoz" FontSize="12" Foreground="{StaticResource TextHint}" HorizontalAlignment="Center"/>
+                                                        <TextBlock x:Name="UpscalerInputFileTextBox" Text="Nincs kiválasztott fájl" FontFamily="{StaticResource MonoFont}" FontSize="11.5"
+                                                                   Foreground="{StaticResource AccentCyan}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0" MaxWidth="460"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
 
-                                <TextBlock Text="2 · MÓDSZER" Style="{StaticResource StepLabel}"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="LocalUpscalerRadioButton" Content="Helyi FFmpeg (ingyenes, offline)" Style="{StaticResource PillRadio}" IsChecked="True" Margin="0,0,10,0" Checked="UpscalerMethod_Checked"/>
-                                    <RadioButton x:Name="CloudUpscalerRadioButton" Content="Fal.ai felhő AI (ingyenes próba)" Style="{StaticResource PillRadio}" Checked="UpscalerMethod_Checked"/>
-                                </StackPanel>
+                                        <!-- Method -->
+                                        <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <Border Style="{StaticResource IconTile}" Background="#24B14EFF">
+                                                        <TextBlock Text="&#xE8A3;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentViolet}"/>
+                                                    </Border>
+                                                    <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="Módszer" Style="{StaticResource CardTitle}"/>
+                                                        <TextBlock Text="Ingyenes helyi feldolgozás vagy felhő AI" Style="{StaticResource CardSubtitle}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <Border Style="{StaticResource SegmentHost}" Margin="0,18,0,0">
+                                                    <UniformGrid Rows="1">
+                                                        <RadioButton x:Name="LocalUpscalerRadioButton" GroupName="UpscaleMode" Style="{StaticResource SegmentItem}" local:Ui.Icon="&#xE7F4;"
+                                                                     Content="Helyi FFmpeg" IsChecked="True" Checked="UpscalerMethod_Checked"/>
+                                                        <RadioButton x:Name="CloudUpscalerRadioButton" GroupName="UpscaleMode" Style="{StaticResource SegmentItem}" local:Ui.Icon="&#xE753;"
+                                                                     Content="Fal.ai felhő AI" Checked="UpscalerMethod_Checked"/>
+                                                    </UniformGrid>
+                                                </Border>
 
-                                <!-- Local options -->
-                                <StackPanel x:Name="LocalUpscalerOptionsPanel">
-                                    <TextBlock Text="NAGYÍTÁS" Style="{StaticResource StepLabel}"/>
-                                    <ComboBox x:Name="LocalScaleComboBox" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="220">
-                                        <ComboBoxItem Content="2x"/>
-                                        <ComboBoxItem Content="3x"/>
-                                        <ComboBoxItem Content="4x"/>
-                                    </ComboBox>
-                                    <TextBlock Text="ALGORITMUS" Style="{StaticResource StepLabel}"/>
-                                    <ComboBox x:Name="LocalAlgorithmComboBox" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="360">
-                                        <ComboBoxItem Content="Lanczos (Valósághű / High Quality)"/>
-                                        <ComboBoxItem Content="xBR (Rajzfilm / Anime / Pixel Art)"/>
-                                        <ComboBoxItem Content="Bicubic (Standard)"/>
-                                    </ComboBox>
-                                </StackPanel>
+                                                <!-- Local options -->
+                                                <local:AdaptiveColumnsPanel x:Name="LocalUpscalerOptionsPanel" BreakWidth="440" Spacing="14">
+                                                    <StackPanel local:AdaptiveColumnsPanel.Weight="0.7">
+                                                        <TextBlock Text="NAGYÍTÁS" Style="{StaticResource FieldLabel}"/>
+                                                        <ComboBox x:Name="LocalScaleComboBox" SelectedIndex="0">
+                                                            <ComboBoxItem Content="2x"/>
+                                                            <ComboBoxItem Content="3x"/>
+                                                            <ComboBoxItem Content="4x"/>
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                    <StackPanel>
+                                                        <TextBlock Text="ALGORITMUS" Style="{StaticResource FieldLabel}"/>
+                                                        <ComboBox x:Name="LocalAlgorithmComboBox" SelectedIndex="0">
+                                                            <ComboBoxItem Content="Lanczos (Valósághű / High Quality)"/>
+                                                            <ComboBoxItem Content="xBR (Rajzfilm / Anime / Pixel Art)"/>
+                                                            <ComboBoxItem Content="Bicubic (Standard)"/>
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                </local:AdaptiveColumnsPanel>
 
-                                <!-- Cloud options -->
-                                <StackPanel x:Name="CloudUpscalerOptionsPanel" Visibility="Collapsed">
-                                    <TextBlock Text="FAL.AI API KULCS" Style="{StaticResource StepLabel}"/>
-                                    <TextBox x:Name="CloudApiKeyTextBox" Tag="Illeszd be a Fal.ai kulcsod…"/>
-                                    <TextBlock Text="Nincs kulcsod? Regisztrálj ingyen (kártya nélkül) a fal.ai oldalon." FontSize="11.5" Foreground="{StaticResource TextHint}" Margin="2,6,0,0"/>
-                                    <TextBlock Text="MODELL" Style="{StaticResource StepLabel}"/>
-                                    <ComboBox x:Name="CloudModelComboBox" SelectedIndex="0" HorizontalAlignment="Left" MinWidth="420">
-                                        <ComboBoxItem Content="clarityai/crystal-video-upscaler (HQ Video)"/>
-                                        <ComboBoxItem Content="bria/video/increase-resolution (Standard)"/>
-                                    </ComboBox>
-                                </StackPanel>
+                                                <!-- Cloud options -->
+                                                <StackPanel x:Name="CloudUpscalerOptionsPanel" Visibility="Collapsed">
+                                                    <TextBlock Text="FAL.AI API KULCS" Style="{StaticResource FieldLabel}"/>
+                                                    <TextBox x:Name="CloudApiKeyTextBox" Tag="Illeszd be a Fal.ai kulcsod…"/>
+                                                    <TextBlock Text="Nincs kulcsod? Regisztrálj ingyen (kártya nélkül) a fal.ai oldalon. A kulcsot az app nem menti el." Style="{StaticResource HintText}"/>
+                                                    <TextBlock Text="Fontos: a videó a feldolgozáshoz a tmpfiles.org-ra töltődik fel (max. 100 MB), ahol kb. 60 percig bárki letöltheti, aki ismeri a linket. Személyes videóhoz használd a helyi módot."
+                                                               Style="{StaticResource HintText}" Foreground="{StaticResource AccentPink}"/>
+                                                    <TextBlock Text="MODELL" Style="{StaticResource FieldLabel}"/>
+                                                    <ComboBox x:Name="CloudModelComboBox" SelectedIndex="0">
+                                                        <ComboBoxItem Content="clarityai/crystal-video-upscaler (HQ Video)"/>
+                                                        <ComboBoxItem Content="bria/video/increase-resolution (Standard)"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
-                                <TextBlock Text="3 · MENTÉS IDE" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="UpscalerOutputPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
-                                    <Button x:Name="UpscalerOutputPathButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="UpscalerOutputPathButton_Click"/>
-                                    <Button x:Name="UpscalerOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="UpscalerOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
-                                </Grid>
-
-                                <Button x:Name="UpscaleButton" Content="Videó felskálázása" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="UpscaleButton_Click"/>
+                                    <!-- Output (top-aligned so the action stays in view next to the taller left column) -->
+                                    <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <DockPanel>
+                                                <Border Style="{StaticResource IconTile}" Background="#2434D9F0">
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentCyan}"/>
+                                                </Border>
+                                                <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Kimenet" Style="{StaticResource CardTitle}"/>
+                                                    <TextBlock Text="Hova kerüljön a felskálázott videó" Style="{StaticResource CardSubtitle}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <StackPanel Grid.Row="1">
+                                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource FieldLabel}"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="UpscalerOutputPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                                    <Button x:Name="UpscalerOutputPathButton" Grid.Column="1" Content="&#xE8B7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="UpscalerOutputPathButton_Click" ToolTip="Másik mappa választása…"/>
+                                                    <Button x:Name="UpscalerOpenFolderButton" Grid.Column="2" Content="&#xE8A7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="UpscalerOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                                </Grid>
+                                                <TextBlock Text="A helyi felskálázás a géped teljesítményétől függően hosszabb ideig is eltarthat." Style="{StaticResource HintText}"/>
+                                            </StackPanel>
+                                            <Button x:Name="UpscaleButton" Grid.Row="3" Content="Videó felskálázása" local:Ui.Icon="&#xE8A3;"
+                                                    Style="{StaticResource AccentButtonStyle}" Margin="0,26,0,0" Click="UpscaleButton_Click"/>
+                                        </Grid>
+                                    </Border>
+                                </local:AdaptiveColumnsPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- ============ TAB 4: FILE CONVERTER ============ -->
+                    <!-- ============ PAGE 4: CONVERTER ============ -->
                     <TabItem>
-                        <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Konvertálás" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </TabItem.Header>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
-                            <StackPanel Margin="4,6,10,6">
-                                <TextBlock Text="Fájl konvertálás" Style="{StaticResource TabTitle}"/>
-                                <TextBlock Text="Alakíts át hang-, videó- és képfájlokat egy másik formátumba." Style="{StaticResource TabSubtitle}"/>
+                        <ScrollViewer Style="{StaticResource PageScroll}">
+                            <StackPanel Style="{StaticResource PageStack}">
+                                <TextBlock Text="FÁJLOK" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock Text="Konvertálás" Style="{StaticResource PageTitle}"/>
+                                <TextBlock Text="Hang-, videó- és képfájlok átalakítása másik formátumba." Style="{StaticResource PageSubtitle}"/>
 
-                                <TextBlock Text="1 · BEMENETI FÁJL  (húzd ide, vagy tallózz)" Style="{StaticResource StepLabel}"/>
+                                <local:AdaptiveColumnsPanel BreakWidth="760" Spacing="18" Margin="0,26,0,0">
+                                    <StackPanel local:AdaptiveColumnsPanel.Weight="1.35">
+                                        <!-- Input -->
+                                        <Border Style="{StaticResource Card}">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,18">
+                                                    <Border Style="{StaticResource IconTile}">
+                                                        <TextBlock Text="&#xE8E5;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentPink}"/>
+                                                    </Border>
+                                                    <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="Bemeneti fájl" Style="{StaticResource CardTitle}"/>
+                                                        <TextBlock Text="Bármilyen hang-, videó- vagy képfájl" Style="{StaticResource CardSubtitle}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <Button x:Name="InputFileButton" Style="{StaticResource DropZone}" Click="InputFileButton_Click"
+                                                        PreviewDragOver="File_PreviewDragOver" PreviewDrop="ConverterInput_Drop">
+                                                    <StackPanel>
+                                                        <Border Width="50" Height="50" CornerRadius="25" Background="#24FF3D9E" HorizontalAlignment="Center">
+                                                            <TextBlock Text="&#xE898;" Style="{StaticResource IconGlyph}" FontSize="20" Foreground="{StaticResource AccentPink}"/>
+                                                        </Border>
+                                                        <TextBlock Text="Húzd ide a fájlt" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                                                   HorizontalAlignment="Center" Margin="0,12,0,2"/>
+                                                        <TextBlock Text="vagy kattints a tallózáshoz" FontSize="12" Foreground="{StaticResource TextHint}" HorizontalAlignment="Center"/>
+                                                        <TextBlock x:Name="InputFileTextBox" Text="Nincs kiválasztott fájl" FontFamily="{StaticResource MonoFont}" FontSize="11.5"
+                                                                   Foreground="{StaticResource AccentCyan}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0" MaxWidth="460"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Target format -->
+                                        <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <Border Style="{StaticResource IconTile}" Background="#24B14EFF">
+                                                        <TextBlock Text="&#xE895;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentViolet}"/>
+                                                    </Border>
+                                                    <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="Cél formátum" Style="{StaticResource CardTitle}"/>
+                                                        <TextBlock Text="Csak a bemeneti fájlhoz illő formátumok aktívak" Style="{StaticResource CardSubtitle}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <Border CornerRadius="10" Background="#0FFFFFFF" Padding="12,9" Margin="0,16,0,0">
+                                                    <DockPanel>
+                                                        <TextBlock Text="&#xE946;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{StaticResource AccentCyan}" VerticalAlignment="Top" Margin="0,1,10,0"/>
+                                                        <TextBlock x:Name="ConverterCompatText" FontSize="12" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/>
+                                                    </DockPanel>
+                                                </Border>
+                                                <StackPanel x:Name="FormatButtonsWrapPanel">
+                                                    <TextBlock Text="HANG" Style="{StaticResource FieldLabel}"/>
+                                                    <WrapPanel>
+                                                        <Button Content=".mp3" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".wav" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".aac" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".flac" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".ogg" Style="{StaticResource FormatButtonStyle}"/>
+                                                    </WrapPanel>
+                                                    <TextBlock Text="VIDEÓ" Style="{StaticResource FieldLabel}" Margin="2,10,0,8"/>
+                                                    <WrapPanel>
+                                                        <Button Content=".mp4" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".mkv" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".mov" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".avi" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".webm" Style="{StaticResource FormatButtonStyle}"/>
+                                                    </WrapPanel>
+                                                    <TextBlock Text="KÉP" Style="{StaticResource FieldLabel}" Margin="2,10,0,8"/>
+                                                    <WrapPanel>
+                                                        <Button Content=".png" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".jpg" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".gif" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".bmp" Style="{StaticResource FormatButtonStyle}"/>
+                                                        <Button Content=".ico" Style="{StaticResource FormatButtonStyle}"/>
+                                                    </WrapPanel>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Output (top-aligned so the action stays in view next to the taller left column) -->
+                                    <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <DockPanel>
+                                                <Border Style="{StaticResource IconTile}" Background="#2434D9F0">
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentCyan}"/>
+                                                </Border>
+                                                <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Kimenet" Style="{StaticResource CardTitle}"/>
+                                                    <TextBlock Text="Hova kerüljön az átalakított fájl" Style="{StaticResource CardSubtitle}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <StackPanel Grid.Row="1">
+                                                <TextBlock Text="MENTÉS IDE" Style="{StaticResource FieldLabel}"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="OutputPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+                                                    <Button x:Name="OutputPathButton" Grid.Column="1" Content="&#xE8B7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="OutputPathButton_Click" ToolTip="Másik mappa választása…"/>
+                                                    <Button x:Name="OutputOpenFolderButton" Grid.Column="2" Content="&#xE8A7;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                                                            Click="OutputOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
+                                                </Grid>
+                                                <TextBlock Text="Az új fájl neve az eredetié marad, csak a kiterjesztése változik." Style="{StaticResource HintText}"/>
+                                            </StackPanel>
+                                            <Button x:Name="ConvertButton" Grid.Row="3" Content="Fájl konvertálása" local:Ui.Icon="&#xE895;"
+                                                    Style="{StaticResource AccentButtonStyle}" Margin="0,26,0,0" Click="ConvertButton_Click"/>
+                                        </Grid>
+                                    </Border>
+                                </local:AdaptiveColumnsPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <!-- ============ PAGE 5: HISTORY ============ -->
+                    <TabItem>
+                        <ScrollViewer Style="{StaticResource PageScroll}">
+                            <StackPanel Style="{StaticResource PageStack}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="InputFileTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}" Tag="Húzz ide egy fájlt…"
-                                             AllowDrop="True" PreviewDragOver="File_PreviewDragOver" Drop="ConverterInput_Drop"/>
-                                    <Button x:Name="InputFileButton" Grid.Column="1" Content="Fájl kiválasztása" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="InputFileButton_Click"/>
+                                    <StackPanel>
+                                        <TextBlock Text="KÖNYVTÁR" Style="{StaticResource Eyebrow}"/>
+                                        <TextBlock Text="Előzmények" Style="{StaticResource PageTitle}"/>
+                                        <TextBlock Text="A YouTube és Pinterest letöltéseid: mikor, mit és hova mentett az app." Style="{StaticResource PageSubtitle}"/>
+                                    </StackPanel>
+                                    <Button x:Name="ClearHistoryButton" Grid.Column="1" Content="Előzmények törlése" local:Ui.Icon="&#xE74D;"
+                                            Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" Margin="16,0,0,2" Click="ClearHistoryButton_Click"/>
                                 </Grid>
 
-                                <TextBlock Text="2 · CÉL FORMÁTUM" Style="{StaticResource StepLabel}"/>
-                                <Border BorderBrush="{StaticResource InputBorder}" BorderThickness="1" CornerRadius="10" Padding="6" Background="#18000000">
-                                    <WrapPanel x:Name="FormatButtonsWrapPanel">
-                                        <Button Content=".mp3" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".wav" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".aac" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".flac" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".ogg" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".mp4" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".mkv" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".mov" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".avi" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".webm" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".png" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".jpg" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".gif" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".bmp" Style="{StaticResource FormatButtonStyle}"/>
-                                        <Button Content=".ico" Style="{StaticResource FormatButtonStyle}"/>
-                                    </WrapPanel>
+                                <!-- Empty state -->
+                                <Border x:Name="HistoryEmptyText" Style="{StaticResource Card}" Margin="0,26,0,0" Padding="24,44">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <Border Width="64" Height="64" CornerRadius="32" Background="{StaticResource NavSelectedBg}" HorizontalAlignment="Center">
+                                            <TextBlock Text="&#xE81C;" Style="{StaticResource IconGlyph}" FontSize="26" Foreground="{StaticResource AccentPink}"/>
+                                        </Border>
+                                        <TextBlock Text="Még nincs letöltés" Style="{StaticResource CardTitle}" HorizontalAlignment="Center" Margin="0,16,0,4"/>
+                                        <TextBlock Text="Ami innentől lejön, itt jelenik meg, a pontos mentési hellyel együtt." Style="{StaticResource CardSubtitle}"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    </StackPanel>
                                 </Border>
 
-                                <TextBlock Text="3 · MENTÉS IDE" Style="{StaticResource StepLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="OutputPathTextBox" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
-                                    <Button x:Name="OutputPathButton" Grid.Column="1" Content="Tallózás…" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Click="OutputPathButton_Click"/>
-                                    <Button x:Name="OutputOpenFolderButton" Grid.Column="2" Content="&#xE838;" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Click="OutputOpenFolderButton_Click" ToolTip="Mappa megnyitása"/>
-                                </Grid>
-
-                                <Button x:Name="ConvertButton" Content="Fájl konvertálása" Style="{StaticResource AccentButtonStyle}" Margin="0,22,0,4" Click="ConvertButton_Click"/>
+                                <ItemsControl x:Name="HistoryList" Margin="0,26,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource Card}" Padding="18,14" Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border x:Name="StatusTile" Width="38" Height="38" CornerRadius="12" Background="#2434D9F0" VerticalAlignment="Top">
+                                                        <TextBlock x:Name="StatusIcon" Text="&#xE73E;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{StaticResource AccentCyan}"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Margin="14,0,12,0">
+                                                        <TextBox Text="{Binding DisplayTitle, Mode=OneWay}" Style="{StaticResource SelectableText}"
+                                                                 Foreground="{StaticResource TextPrimary}" FontSize="14.5" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Meta}" Foreground="{StaticResource TextHint}" FontSize="12" Margin="0,3,0,0"/>
+                                                        <TextBox Text="{Binding Detail, Mode=OneWay}" Style="{StaticResource SelectableText}"
+                                                                 FontFamily="{StaticResource MonoFont}" FontSize="11.5" Margin="0,6,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Content="&#xE838;" Style="{StaticResource GhostIconButton}" ToolTip="Megnyitás a mappában" Click="HistoryShowInFolder_Click"/>
+                                                        <Button Content="&#xE71B;" Style="{StaticResource GhostIconButton}" Margin="4,0,0,0" ToolTip="Link másolása" Click="HistoryCopyLink_Click"/>
+                                                        <Button Content="&#xE74D;" Style="{StaticResource GhostIconButton}" Margin="4,0,0,0" ToolTip="Eltávolítás az előzményekből" Click="HistoryRemove_Click"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Success}" Value="False">
+                                                    <Setter TargetName="StatusIcon" Property="Text" Value="&#xE711;"/>
+                                                    <Setter TargetName="StatusIcon" Property="Foreground" Value="{StaticResource AccentPink}"/>
+                                                    <Setter TargetName="StatusTile" Property="Background" Value="#24FF3D9E"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
                 </TabControl>
 
-                <!-- Status log -->
-                <Grid Grid.Row="2" Margin="0,14,0,0">
-                    <Border CornerRadius="10" Background="#59000000" BorderBrush="#22FFFFFF" BorderThickness="1" Padding="12,10">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="120">
-                            <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="12"
-                                       Text="Üdv! Válassz egy fület fent a kezdéshez." Foreground="{StaticResource TextMuted}"/>
-                        </ScrollViewer>
-                    </Border>
-                    <Button x:Name="ClearLogButton" Content="&#xE74D;" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6"
-                            Width="26" Height="26" Style="{StaticResource WindowControlButton}" Click="ClearLogButton_Click" ToolTip="Napló törlése"/>
-                </Grid>
-
-                <!-- Progress -->
-                <ProgressBar Grid.Row="3" x:Name="GlobalProgressBar" Height="6" Margin="0,12,0,0" IsIndeterminate="True" Visibility="Collapsed"
-                             Minimum="0" Maximum="100" Background="#33000000" BorderThickness="0" Foreground="{StaticResource AccentPink}"/>
+                <!-- ===== Console (log + progress) ===== -->
+                <Border x:Name="ConsoleCard" Grid.Row="2" Margin="40,0,40,20" MaxWidth="1100" CornerRadius="16"
+                        Background="{StaticResource ConsoleBg}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid Height="3" Margin="16,0">
+                            <ProgressBar x:Name="GlobalProgressBar" Style="{StaticResource NeonProgress}" Minimum="0" Maximum="100" IsIndeterminate="True" Visibility="Collapsed"/>
+                        </Grid>
+                        <Grid Grid.Row="1" Margin="16,6,8,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE756;" Style="{StaticResource IconGlyph}" FontSize="12" Foreground="{StaticResource AccentPink}"/>
+                                <TextBlock Text="NAPLÓ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextHint}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <Button x:Name="CopyLogButton" Content="&#xE8C8;" Style="{StaticResource GhostIconButton}" Click="CopyLogButton_Click" ToolTip="Napló másolása a vágólapra"/>
+                                <Button x:Name="ClearLogButton" Content="&#xE74D;" Style="{StaticResource GhostIconButton}" Click="ClearLogButton_Click" ToolTip="Napló törlése"/>
+                                <Button x:Name="ConsoleToggleButton" Content="&#xE70D;" Style="{StaticResource GhostIconButton}" Click="ConsoleToggleButton_Click" ToolTip="Napló összecsukása"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBox x:Name="StatusLog" Grid.Row="2" Style="{StaticResource LogTextBox}" Margin="18,0,14,14" MaxHeight="118"
+                                 FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                 Text="Üdv! Válassz egy eszközt bal oldalt a kezdéshez."/>
+                    </Grid>
+                </Border>
             </Grid>
-        </Border>
+        </Grid>
     </Grid>
 </Window>

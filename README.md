@@ -1,6 +1,6 @@
 # Zn Tools
 
-A modern **WPF (.NET 8)** desktop media toolkit for Windows — convert between 15 audio, video and image formats, **upscale video** either locally (FFmpeg) or with cloud AI (Fal.ai), and fetch media from a URL. All wrapped in a custom, frameless "synthwave glass" UI.
+A modern **WPF (.NET 8)** desktop media toolkit for Windows — convert between 15 audio, video and image formats, **upscale video** either locally (FFmpeg) or with cloud AI (Fal.ai), and fetch media from a URL. All wrapped in a custom, frameless "synthwave glass" UI: an abstract animated backdrop (drifting neon light, a sliced sun and a perspective grid), a sidebar that folds into an icon rail on narrow windows, and card layouts that reflow from two columns to one.
 
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/UI-WPF-2C68C4)
@@ -17,11 +17,14 @@ A modern **WPF (.NET 8)** desktop media toolkit for Windows — convert between 
 | Tab | What it does |
 | --- | --- |
 | ✨ **Video Upscaler** | Increase video resolution **locally** with FFmpeg (2×–4×, Lanczos / xBR / Bicubic) or via **Fal.ai** cloud AI models. |
-| ⇄ **File Converter** | Convert between 15 audio, video, and image formats (`mp3`, `wav`, `flac`, `mp4`, `mkv`, `webm`, `png`, `jpg`, `ico`, …). |
+| ⇄ **File Converter** | Convert between 15 audio, video, and image formats (`mp3`, `wav`, `flac`, `mp4`, `mkv`, `webm`, `png`, `jpg`, `ico`, …). The input is inspected with ffprobe and only compatible targets are offered: audio → audio, video → video / its soundtrack as audio / animated GIF, image → image, animated GIF → image or video. |
 | ▶ **YouTube** | Download **music** (`mp3` / `m4a` / `wav`) or **video** (Best / 1080p / 720p / 480p / 360p, merged to `mp4`) from any YouTube link. |
 | 📌 **Pinterest** | Download video from a Pinterest Pin link (`mp4` or original quality). |
+| 🕘 **History** | Every YouTube / Pinterest download — when, what, format, and the exact file it was saved to — with "show in folder", "copy link" and remove. Kept in `%LOCALAPPDATA%\ZnTools\download-history.json`. |
 
-**Usability niceties:** paste-from-clipboard buttons, one-click "open output folder", drag-and-drop file input, a live download progress bar, a custom frameless window (drag, snap, resize), and a real-time status log.
+**Usability niceties:** paste-from-clipboard buttons, one-click "open output folder", drag-and-drop zones for file input, a live progress line, a custom frameless window (drag, snap, resize, native rounded corners on Windows 11), a collapsible real-time log you can select and copy from, and a sidebar indicator that shows whether yt-dlp / FFmpeg / deno are in place. Files are saved to your actual Windows Downloads folder by default (even if it has been moved off `C:`), and audio downloads prefer a stereo source so long WAVs stay a sensible size.
+
+**Safety:** links must be a single `http(s)://` address and every external tool is started with a separate argument list, so pasted text can never smuggle in extra yt-dlp/FFmpeg options. Conversions and upscales never overwrite an existing file (`name (1).ext` instead), and closing the window while a job runs asks first and then stops the tool instead of leaving it running in the background. Cloud upscaling uploads the video to tmpfiles.org (public for ~60 minutes, max 100 MB), which the UI states up front.
 
 ## Tech stack
 
@@ -39,6 +42,7 @@ A modern **WPF (.NET 8)** desktop media toolkit for Windows — convert between 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - **`yt-dlp.exe`**, **`ffmpeg.exe`** and **`ffprobe.exe`** — these third-party CLI tools are **not** committed to the repository (they are large binaries with their own licenses). The app looks for them next to the built executable (the `bin/Debug/net8.0-windows/` output folder). The easiest way to get them is the bundled `fetch-tools.ps1` script (see below); to install them by hand instead:
   - yt-dlp: <https://github.com/yt-dlp/yt-dlp/releases>
+  - deno (JS runtime yt-dlp needs for YouTube): <https://github.com/denoland/deno/releases>
   - FFmpeg (full build): <https://www.gyan.dev/ffmpeg/builds/>
 
 ### Build & run
@@ -60,7 +64,11 @@ Then build and run:
 dotnet run --project ZnDownloader.csproj
 ```
 
-> `fetch-tools.ps1` downloads `yt-dlp.exe`, `ffmpeg.exe` and `ffprobe.exe` into `bin/Debug/net8.0-windows/`. It skips anything already present — pass `-Force` to refresh, or `-OutputDir bin/Release/net8.0-windows` for a Release build.
+> `fetch-tools.ps1` downloads `yt-dlp.exe`, `deno.exe`, `ffmpeg.exe` and `ffprobe.exe` into `bin/Debug/net8.0-windows/`. An existing `yt-dlp.exe` is updated in place (`yt-dlp -U`); the other tools are skipped if present — pass `-Force` to refresh everything, or `-OutputDir bin/Release/net8.0-windows` for a Release build.
+>
+> Every download comes from the tool's official release location over HTTPS and is checked against its published SHA-256 checksum before it is extracted or put in place; a mismatch aborts the script and installs nothing.
+>
+> `deno.exe` is the JavaScript runtime yt-dlp needs to solve YouTube's player challenges — without it (or with an outdated yt-dlp) YouTube downloads fail with `HTTP Error 403: Forbidden`. The app also runs `yt-dlp -U` once per session before the first download.
 
 ### Cloud upscaling (optional)
 
@@ -71,10 +79,10 @@ The Fal.ai cloud upscaler needs a free API key (no credit card required) from [f
 ```
 ZnDownloader.csproj   # .NET 8 WPF project
 App.xaml(.cs)         # App entry point + global crash logging
-MainWindow.xaml       # UI: styles, 4 tabs, synthwave glass layout
+MainWindow.xaml       # UI: styles, abstract backdrop, responsive sidebar + card pages
 MainWindow.xaml.cs    # Logic: downloading, conversion, upscaling
 fetch-tools.ps1       # Downloads yt-dlp / ffmpeg / ffprobe into the build output
-hatterkep.png         # Background image (embedded resource)
+hatterkep.png         # Previous background photo (no longer used by the UI)
 icon.ico              # App icon
 ```
 
