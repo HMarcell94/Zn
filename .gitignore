@@ -17,6 +17,7 @@ build/
 # These are large binaries with their own licenses. Download them separately
 # (see README) and drop them next to the built .exe.
 yt-dlp.exe
+deno.exe
 ffmpeg.exe
 ffprobe.exe
 ffmpeg-*-full_build/
