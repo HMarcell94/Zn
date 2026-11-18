@@ -7,7 +7,7 @@ A **WPF (.NET 8)** desktop media toolkit for Windows. It downloads music and vid
 ![C#](https://img.shields.io/badge/C%23-12-239120?logo=csharp&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)
 
-![Zn Tools – YouTube page](docs/screenshot.png)
+![Zn Tools – YouTube page](docs/screenshot-youtube.png)
 
 | Upscaling page | Narrow window: icon rail, stacked cards |
 | --- | --- |
